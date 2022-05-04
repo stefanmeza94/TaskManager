@@ -1,0 +1,36 @@
+const express = require('express');
+const app = express();
+const tasks = require('./routes/tasks');
+const connectDB = require('./db/connect');
+
+// da bi zapravo pristupili tim vajlovima iz .env fajla moramo da koristimo paket po imenu dotenv!
+// stvarima iz varijabalnog okruzenja (.env) pristupamo sa process.env<IME KOJE SMO ODREDILI U .env FAJLU>
+require('dotenv').config();
+
+const notFound = require('./middleware/not-found');
+const errorHandlerMiddleware = require('./middleware/error-handler');
+
+// middleware
+app.use(express.static('./public'));
+app.use(express.json());
+
+// routes
+app.use('/api/v1/tasks', tasks);
+app.use(notFound);
+app.use(errorHandlerMiddleware);
+
+const port = process.env.PORT || 3000;
+
+// hocemo prvo da se konektujemo sa data bazom pa onda tek da pokrenemo nas server, jer ako je obrnutno nista nece raditi. zato smo ubacili mongoose.connect funkciju unutar druge funkcije (connectDB) i nju importovali ovde da bi mogli da je pozovemo samo kad se taj response vrati od mongooose.connect upesno, ako se vrati uspesno slusamo nas server!
+const start = async () => {
+  try {
+    await connectDB(process.env.MONGO_URI);
+    app.listen(port, () => {
+      console.log(`server is listening on port ${port}`);
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+start();
